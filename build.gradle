@@ -64,7 +64,7 @@ if (stonecutter.current().isActiveVersion()) {
     plugins.apply 'com.matthewprenger.cursegradle'
 
     modrinth {
-        token = TOKEN_MODRINTH
+        token = System.getenv("mrp_D9r2XsAHrrmXiclfkMbZuhyBcTIVsEHs5pRRe9GfMlZzRWiCmKNzit9YuIE4")
         projectId = property('publish.modrinth.id')
         uploadFile = remapJar
         changelog = java.nio.file.Files.readString(rootProject.file("Changelog.md").toPath())
