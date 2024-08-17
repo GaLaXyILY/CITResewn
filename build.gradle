@@ -4,12 +4,9 @@ plugins.apply 'io.shcm.shsupercm.fabric.fletchingtable'
 version = "${property('mod.version')}+${stonecutter.current().version()}"
 group = 'shcm.shsupercm.fabric.citresewn'
 
-allprojects {
-    gradle.projectsEvaluated {
-        tasks.withType(JavaCompile) {
-            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
-        }
-    }
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-Xlint:unchecked'
+    options.deprecation = true
 }
 
 repositories {
