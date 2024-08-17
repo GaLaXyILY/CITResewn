@@ -2,7 +2,7 @@ plugins.apply 'fabric-loom'
 plugins.apply 'io.shcm.shsupercm.fabric.fletchingtable'
 
 version = "${property('mod.version')}+${stonecutter.current().version()}"
-group = 'shcm.shsupercm.fabric.citresewn'
+group = 'shcm.shsupercm.fabric.citresewn.defaults'
 
 repositories {
     maven { url 'https://maven.terraformersmc.com/releases/' }
@@ -19,7 +19,13 @@ dependencies {
     modCompileOnly "com.terraformersmc:modmenu:${property('deps.modmenu')}"
     modCompileOnly "me.shedaniel.cloth:cloth-config-fabric:${property('deps.cloth-config')}"
 
-    include project(":defaults:${stonecutter.current().version()}")
+    implementation project(path: ":${stonecutter.current().version()}", configuration: "namedElements")
+
+    // testing mods
+    modRuntimeOnly "net.fabricmc:fabric-loader:${property('deps.fabric-loader')}"
+    modRuntimeOnly "net.fabricmc.fabric-api:fabric-api:${property('deps.fabric-api')}"
+    modRuntimeOnly "com.terraformersmc:modmenu:${property('deps.modmenu')}"
+    modRuntimeOnly "me.shedaniel.cloth:cloth-config-fabric:${property('deps.cloth-config')}"
 }
 
 fletchingTable {
@@ -27,7 +33,7 @@ fletchingTable {
 }
 
 loom {
-    accessWidenerPath = file("../../src/main/resources/citresewn.accesswidener")
+    accessWidenerPath = file("../../src/main/resources/citresewn-defaults.accesswidener")
 
     runConfigs.client.ideConfigGenerated = false
     runConfigs.server.ideConfigGenerated = false
@@ -38,12 +44,12 @@ java {
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
 
-    archivesBaseName = property('mod.jarname')
+    archivesBaseName = "${property('mod.jarname')}-defaults"
 }
 
 processResources {
     filesMatching('fabric.mod.json') {
-        expand 'mod_version': version, 'mod_target_mc': project.property('mod.target-mc')
+        expand 'mod_version': version
     }
 }
 
@@ -54,62 +60,25 @@ jar {
 }
 
 if (stonecutter.current().isActiveVersion()) {
-    rootProject.tasks.register('buildActive') {
-        setGroup 'project'
-
-        dependsOn tasks.getByName('build')
-    }
+    loom.runConfigs.client.ideConfigGenerated = true
 
     plugins.apply 'com.modrinth.minotaur'
-    plugins.apply 'com.matthewprenger.cursegradle'
 
     modrinth {
         token = System.getenv("mrp_D9r2XsAHrrmXiclfkMbZuhyBcTIVsEHs5pRRe9GfMlZzRWiCmKNzit9YuIE4")
-        projectId = property('publish.modrinth.id')
+        projectId = property('publish.modrinth.defaults.id')
         uploadFile = remapJar
-        changelog = java.nio.file.Files.readString(rootProject.file("Changelog.md").toPath())
         versionNumber = version
         versionName = "v" + version
         additionalFiles = [sourcesJar.outputs.getFiles().singleFile]
         gameVersions = Arrays.asList(property('publish.target-mc').split(","))
     }
 
-    curseforge {
-        apiKey = TOKEN_CURSEFORGE
-        project {
-            id = property('publish.curseforge.id')
-            changelogType = 'markdown'
-            changelog = rootProject.file('Changelog.md')
-            releaseType = 'release'
-            mainArtifact(remapJar) {
-                displayName = "v" + version
-            }
-            addGameVersion 'Fabric'
-            for (String version : property('publish.target-mc').split(","))
-                addGameVersion version
-        }
-        options {
-            forgeGradleIntegration = false
-        }
-    }
-
-    rootProject.tasks.register('publishActive') {
-        setGroup 'project'
-
-        if (gradle.startParameter.taskNames.contains(it.name)) {
-            System.out.println("Type the task name to confirm (${it.name}): ")
-            try (BufferedReader input = new BufferedReader(new InputStreamReader(System.in))) {
-                if (input.readLine() != it.name)
-                    throw new GradleException('Task cancelled by user')
-            }
-        }
-
+    rootProject.tasks.named('publishActive') {
         Task remapJarTask = tasks.getByName 'remapJar'
-        Task curseforgeTask = tasks.getByName 'curseforge'
         Task modrinthTask = tasks.getByName 'modrinth'
 
-        dependsOn remapJarTask, curseforgeTask, modrinthTask
-        curseforgeTask.mustRunAfter remapJarTask
+        dependsOn remapJarTask, modrinthTask
         modrinthTask.mustRunAfter remapJarTask
     }
 }
